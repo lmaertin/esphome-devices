@@ -1,0 +1,33 @@
+type: vertical-stack
+cards:
+  - type: entities
+    title: Poollampe Steuerung
+    entities:
+      - select.esphome_poollamp_farbe_innen_w_hlen
+      - button.esphome_poollamp_simuliere_taster_innen
+      - select.esphome_poollamp_farbe_au_en_w_hlen
+      - button.esphome_poollamp_simuliere_taster_au_en
+  - show_name: true
+    show_icon: false
+    type: button
+    entity: input_boolean.sync_anzeigen
+    name: Sync anzeigen/verstecken
+    icon: mdi:tools
+    tap_action:
+      action: toggle
+  - type: conditional
+    conditions:
+      - entity: input_boolean.sync_anzeigen
+        state: "on"
+    card:
+      type: entities
+      title: Konfiguration
+      entities:
+        - select.esphome_poollamp_farbe_innen_korrigieren
+        - select.esphome_poollamp_farbe_au_en_korrigieren
+  - type: entities
+    title: Diagnose
+    entities:
+      - sensor.esphome_poollamp_wlan_signal
+      - sensor.esphome_poollamp_ip_adresse
+      - button.esphome_poollamp_neustarten

@@ -1,0 +1,315 @@
+esphome:
+  name: esphome-poollamp
+  friendly_name: Intex Poollampe
+
+esp8266:
+  board: d1_mini
+
+# Reduzierte Logausgabe
+logger:
+  level: WARN
+
+# API für Home Assistant
+api:
+  encryption:
+    key: "TODO"
+
+ota:
+  platform: esphome
+  password: "TODO"
+
+wifi:
+  ssid: TODO
+  password: TODO
+
+  ap:
+    ssid: "Intex Poollampe Fallback Hotspot"
+    password: "TODO"
+
+captive_portal:
+
+# Aktueller Farbzustand (innen: 0–3, aussen: 0–6)
+globals:
+  - id: poollamp_color_inner
+    type: int
+    restore_value: yes
+    initial_value: '0'
+  - id: poollamp_color_outer
+    type: int
+    restore_value: yes
+    initial_value: '0'
+
+# Farbnamen als Textsensoren
+text_sensor:
+  - platform: template
+    name: "Farbe Innen"
+    id: poollamp_color_inner_name
+    lambda: |-
+      switch (id(poollamp_color_inner)) {
+        case 0: return {"Aus"};
+        case 1: return {"Weiss"};
+        case 2: return {"Aus"};
+        case 3: return {"Farbwechsel"};
+        default: return {"Unbekannt"};
+      }
+    disabled_by_default: true
+
+  - platform: template
+    name: "Farbe Außen"
+    id: poollamp_color_outer_name
+    lambda: |-
+      switch (id(poollamp_color_outer)) {
+        case 0: return {"Aus"};
+        case 1: return {"Weiss"};
+        case 2: return {"Grün"};
+        case 3: return {"Grünblau"};
+        case 4: return {"Blau"};
+        case 5: return {"Violett"};
+        case 6: return {"Farbwechsel"};
+        default: return {"Unbekannt"};
+      }
+    disabled_by_default: true
+  - platform: wifi_info
+    ip_address:
+      id: poollamp_ip
+      name: "IP-Adresse"
+
+# Farbindex als Zahl (optional für Anzeige)
+sensor:
+  - platform: template
+    name: "Farbe Innen Index"
+    id: poollamp_color_inner_index
+    lambda: |-
+      return id(poollamp_color_inner);
+    update_interval: 1s
+    disabled_by_default: true
+
+  - platform: template
+    name: "Farbe Außen Index"
+    id: poollamp_color_outer_index
+    lambda: |-
+      return id(poollamp_color_outer);
+    update_interval: 1s
+    disabled_by_default: true
+  # WLAN Signalstärke
+  - platform: wifi_signal
+    name: "WLAN-Signal"
+    id: poollamp_wifi_signal
+    update_interval: 60s
+  - platform: uptime
+    name: "Uptime"
+    id: poollamp_uptime
+    disabled_by_default: true
+
+# Tastereingänge
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: D2
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Taster Innen (physisch)"
+    id: poollamp_button_inner
+    on_press:
+      then:
+        - lambda: |-
+            id(poollamp_color_inner) += 1;
+            if (id(poollamp_color_inner) > 3) id(poollamp_color_inner) = 0;
+        - component.update: poollamp_color_inner_name
+        - component.update: poollamp_color_inner_index
+        - lambda: |-
+            switch (id(poollamp_color_inner)) {
+              case 0:
+              case 2: id(poollamp_color_inner_select).publish_state("Aus"); break;
+              case 1: id(poollamp_color_inner_select).publish_state("Weiss"); break;
+              case 3: id(poollamp_color_inner_select).publish_state("Farbwechsel"); break;
+            }
+
+  - platform: gpio
+    pin:
+      number: D1
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Taster Außen (physisch)"
+    id: poollamp_button_outer
+    on_press:
+      then:
+        - lambda: |-
+            id(poollamp_color_outer) += 1;
+            if (id(poollamp_color_outer) > 6) id(poollamp_color_outer) = 0;
+        - component.update: poollamp_color_outer_name
+        - component.update: poollamp_color_outer_index
+        - lambda: |-
+            switch (id(poollamp_color_outer)) {
+              case 0: id(poollamp_color_outer_select).publish_state("Aus"); break;
+              case 1: id(poollamp_color_outer_select).publish_state("Weiss"); break;
+              case 2: id(poollamp_color_outer_select).publish_state("Grün"); break;
+              case 3: id(poollamp_color_outer_select).publish_state("Grünblau"); break;
+              case 4: id(poollamp_color_outer_select).publish_state("Blau"); break;
+              case 5: id(poollamp_color_outer_select).publish_state("Violett"); break;
+              case 6: id(poollamp_color_outer_select).publish_state("Farbwechsel"); break;
+            }
+
+# Virtuelle Buttons zum Simulieren der Taster
+button:
+  - platform: template
+    name: "Simuliere Taster Innen"
+    id: poollamp_button_inner_simulate
+    on_press:
+      - lambda: |-
+          pinMode(D2, OUTPUT);
+          digitalWrite(D2, LOW);
+          delay(70);
+          digitalWrite(D2, HIGH);
+          pinMode(D2, INPUT_PULLUP);
+          id(poollamp_color_inner) += 1;
+          if (id(poollamp_color_inner) > 3) id(poollamp_color_inner) = 0;
+      - component.update: poollamp_color_inner_name
+      - component.update: poollamp_color_inner_index
+      - lambda: |-
+          switch (id(poollamp_color_inner)) {
+            case 0:
+            case 2: id(poollamp_color_inner_select).publish_state("Aus"); break;
+            case 1: id(poollamp_color_inner_select).publish_state("Weiss"); break;
+            case 3: id(poollamp_color_inner_select).publish_state("Farbwechsel"); break;
+          }
+  - platform: template
+    name: "Simuliere Taster Außen"
+    id: poollamp_button_outer_simulate
+    on_press:
+      - lambda: |-
+          pinMode(D1, OUTPUT);
+          digitalWrite(D1, LOW);
+          delay(70);
+          digitalWrite(D1, HIGH);
+          pinMode(D1, INPUT_PULLUP);
+          id(poollamp_color_outer) += 1;
+          if (id(poollamp_color_outer) > 6) id(poollamp_color_outer) = 0;
+      - component.update: poollamp_color_outer_name
+      - component.update: poollamp_color_outer_index
+      - lambda: |-
+          switch (id(poollamp_color_outer)) {
+            case 0: id(poollamp_color_outer_select).publish_state("Aus"); break;
+            case 1: id(poollamp_color_outer_select).publish_state("Weiss"); break;
+            case 2: id(poollamp_color_outer_select).publish_state("Grün"); break;
+            case 3: id(poollamp_color_outer_select).publish_state("Grünblau"); break;
+            case 4: id(poollamp_color_outer_select).publish_state("Blau"); break;
+            case 5: id(poollamp_color_outer_select).publish_state("Violett"); break;
+            case 6: id(poollamp_color_outer_select).publish_state("Farbwechsel"); break;
+          }
+  - platform: restart
+    name: "Neustarten"
+    id: poollamp_restart
+
+# Selects mit Durchschaltlogik (automatischer Tastendruck)
+select:
+  - platform: template
+    name: "Farbe Innen wählen"
+    id: poollamp_color_inner_select
+    options:
+      - "Aus"
+      - "Weiss"
+      - "Aus"
+      - "Farbwechsel"
+    initial_option: "Aus"
+    optimistic: true
+    set_action:
+      - lambda: |-
+          int target = 0;
+          if (x == "Weiss") target = 1;
+          else if (x == "Farbwechsel") target = 3;
+          int current = id(poollamp_color_inner);
+          int diff = (target - current + 4) % 4;
+          for (int i = 0; i < diff; i++) {
+            id(poollamp_button_inner_simulate).press();
+            delay(150);
+          }
+
+  - platform: template
+    name: "Farbe Außen wählen"
+    id: poollamp_color_outer_select
+    options:
+      - "Aus"
+      - "Weiss"
+      - "Grün"
+      - "Grünblau"
+      - "Blau"
+      - "Violett"
+      - "Farbwechsel"
+    initial_option: "Aus"
+    optimistic: true
+    set_action:
+      - lambda: |-
+          int target = 0;
+          if (x == "Weiss") target = 1;
+          else if (x == "Grün") target = 2;
+          else if (x == "Grünblau") target = 3;
+          else if (x == "Blau") target = 4;
+          else if (x == "Violett") target = 5;
+          else if (x == "Farbwechsel") target = 6;
+          int current = id(poollamp_color_outer);
+          int diff = (target - current + 7) % 7;
+          for (int i = 0; i < diff; i++) {
+            id(poollamp_button_outer_simulate).press();
+            delay(150);
+          }
+
+# Manuelle Sync-Selects (nur interner Zustand wird gesetzt)
+  - platform: template
+    name: "Farbe Innen korrigieren"
+    id: poollamp_color_inner_sync
+    options:
+      - "Aus"
+      - "Weiss"
+      - "Farbwechsel"
+    initial_option: "Aus"
+    optimistic: true
+    set_action:
+      - lambda: |-
+          if (x == "Aus") id(poollamp_color_inner) = 0;
+          else if (x == "Weiss") id(poollamp_color_inner) = 1;
+          else if (x == "Farbwechsel") id(poollamp_color_inner) = 3;
+      - component.update: poollamp_color_inner_name
+      - component.update: poollamp_color_inner_index
+      - lambda: |-
+          switch (id(poollamp_color_inner)) {
+            case 0:
+            case 2: id(poollamp_color_inner_select).publish_state("Aus"); break;
+            case 1: id(poollamp_color_inner_select).publish_state("Weiss"); break;
+            case 3: id(poollamp_color_inner_select).publish_state("Farbwechsel"); break;
+          }
+
+  - platform: template
+    name: "Farbe Außen korrigieren"
+    id: poollamp_color_outer_sync
+    options:
+      - "Aus"
+      - "Weiss"
+      - "Grün"
+      - "Grünblau"
+      - "Blau"
+      - "Violett"
+      - "Farbwechsel"
+    initial_option: "Aus"
+    optimistic: true
+    set_action:
+      - lambda: |-
+          if (x == "Aus") id(poollamp_color_outer) = 0;
+          else if (x == "Weiss") id(poollamp_color_outer) = 1;
+          else if (x == "Grün") id(poollamp_color_outer) = 2;
+          else if (x == "Grünblau") id(poollamp_color_outer) = 3;
+          else if (x == "Blau") id(poollamp_color_outer) = 4;
+          else if (x == "Violett") id(poollamp_color_outer) = 5;
+          else if (x == "Farbwechsel") id(poollamp_color_outer) = 6;
+      - component.update: poollamp_color_outer_name
+      - component.update: poollamp_color_outer_index
+      - lambda: |-
+          switch (id(poollamp_color_outer)) {
+            case 0: id(poollamp_color_outer_select).publish_state("Aus"); break;
+            case 1: id(poollamp_color_outer_select).publish_state("Weiss"); break;
+            case 2: id(poollamp_color_outer_select).publish_state("Grün"); break;
+            case 3: id(poollamp_color_outer_select).publish_state("Grünblau"); break;
+            case 4: id(poollamp_color_outer_select).publish_state("Blau"); break;
+            case 5: id(poollamp_color_outer_select).publish_state("Violett"); break;
+            case 6: id(poollamp_color_outer_select).publish_state("Farbwechsel"); break;
+          }
