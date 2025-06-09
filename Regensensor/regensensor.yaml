@@ -1,0 +1,60 @@
+esphome:
+  name: esphome-regensensor
+  friendly_name: Regensensor
+
+esp8266:
+  board: d1_mini
+
+# Logging aktivieren
+logger:
+
+# API für Home Assistant
+api:
+  encryption:
+    key: "XKO1rkowJwGsSTBgiv5+BSnqjLYVm1UB8JRLfb+bJNo="
+
+ota:
+  platform: esphome
+  password: "0c969cc3fda8bd3d4cc777faeaf67335"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: "Regensensor Fallback Hotspot"
+    password: "yWuUmSzus1pw"
+
+captive_portal:
+
+binary_sensor:
+  - platform: gpio
+    name: "Erkennung"
+    pin:
+      number: GPIO1
+      mode: INPUT
+      inverted: false
+    device_class: moisture
+
+switch:
+  - platform: gpio
+    name: "Heizung"
+    pin: GPIO0
+    id: heizung
+
+sensor:
+  - platform: wifi_signal
+    name: "WLAN-Signal"
+    update_interval: 60s
+
+  - platform: uptime
+    name: "Uptime"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP-Adresse"
+
+button:
+  - platform: restart
+    name: "Neustarten"
