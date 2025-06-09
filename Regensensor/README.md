@@ -2,6 +2,8 @@
 
 Dieses Projekt beschreibt die Konfiguration eines Regensensors mit zuschaltbarer Heizung auf Basis eines D1 Mini (ESP8266) mit ESPHome.
 
+![Rainsensor](rainsensor3.jpg)
+
 ## Funktionen
 
 - **Regenerkennung** über GPIO1 (binär)
@@ -19,12 +21,16 @@ Dieses Projekt beschreibt die Konfiguration eines Regensensors mit zuschaltbarer
 - ESP01 (ESP8266)
 - 12V Netzteil
 
+![Rainsensor Cables](rainsensor2.jpg)
+
 ## Pinbelegung
 
 | Pin    | Funktion           |
 |--------|--------------------|
 | GPIO0  | Relais für Heizung |
 | GPIO1  | Regensensor        |
+
+![Rainsensor Close-Up](rainsensor1.jpg)
 
 Die Versorgungsspannung von dem ESP01 kann an dem Board vom Regensensor abgegriffen werden, variiert ja nach Platine.
 
