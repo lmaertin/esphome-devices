@@ -11,11 +11,11 @@ logger:
 # API für Home Assistant
 api:
   encryption:
-    key: "XKO1rkowJwGsSTBgiv5+BSnqjLYVm1UB8JRLfb+bJNo="
+    key: TODO
 
 ota:
   platform: esphome
-  password: "0c969cc3fda8bd3d4cc777faeaf67335"
+  password: TODO
 
 wifi:
   ssid: !secret wifi_ssid
